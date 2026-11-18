@@ -227,12 +227,11 @@ export default function Cart() {
                 </div>
 
                 {/* Checkout */}
-                <button
-                  disabled
-                  className="w-full mt-8 bg-[#d6bd91] text-black py-5 text-xs uppercase tracking-[0.2em] opacity-50 cursor-not-allowed"
-                >
-                  Checkout Coming Soon
-                </button>
+                <Link  to="/checkout"
+                     className="block w-full mt-8 bg-[#d6bd91] text-black py-5 text-center text-xs uppercase tracking-[0.2em] font-medium hover:bg-white transition"
+>
+                    PROCEED TO CHECKOUT
+                </Link>
 
                 <p className="text-gray-600 text-[11px] text-center mt-5">
                   Shipping charges will be calculated at checkout.

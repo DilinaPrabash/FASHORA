@@ -12,6 +12,7 @@ import Products from "./pages/Products";
 import Collections from "./pages/Collections";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 
 function HomePage() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/collections" element={<Collections />} />
           <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
         </Routes>
       </BrowserRouter>
     </CartProvider>
