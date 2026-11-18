@@ -8,6 +8,7 @@ import FeaturedProducts from "./components/FeaturedProducts";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Collections from "./pages/Collections";
+import ProductDetails from "./pages/ProductDetails";
 
 function HomePage() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<Products />} />
         <Route path="/collections" element={<Collections />} />
+        <Route path="/products/:id" element={<ProductDetails />} />
       </Routes>
     </BrowserRouter>
   );

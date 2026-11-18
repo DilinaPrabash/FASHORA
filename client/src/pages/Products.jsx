@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
 
 // Sample product data
@@ -10,56 +10,64 @@ const products = [
     name: "Elegant Summer Dress",
     category: "Women",
     price: 8500,
-    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=700",
+    image:
+      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=700",
   },
   {
     id: 2,
     name: "Classic Men's Outfit",
     category: "Men",
     price: 12000,
-    image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=700",
+    image:
+      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=700",
   },
   {
     id: 3,
     name: "Luxury Handbag",
     category: "Accessories",
     price: 6500,
-    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700",
+    image:
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700",
   },
   {
     id: 4,
     name: "Premium Casual Shoes",
     category: "Shoes",
     price: 9500,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700",
   },
   {
     id: 5,
     name: "Women's Fashion Outfit",
     category: "Women",
     price: 10500,
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=700",
+    image:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=700",
   },
   {
     id: 6,
     name: "Men's Casual Style",
     category: "Men",
     price: 7800,
-    image: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=700",
+    image:
+      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=700",
   },
   {
     id: 7,
     name: "Elegant Accessories",
     category: "Accessories",
     price: 4500,
-    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=700",
+    image:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=700",
   },
   {
     id: 8,
     name: "Sport Sneakers",
     category: "Shoes",
     price: 11500,
-    image: "https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?w=700",
+    image:
+      "https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?w=700",
   },
 ];
 
@@ -76,7 +84,8 @@ export default function Products() {
     : "All";
 
   // States
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] =
+    useState(initialCategory);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
 
@@ -197,12 +206,14 @@ export default function Products() {
                 {/* Product Image */}
                 <div className="relative h-[360px] overflow-hidden bg-[#171717]">
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                  />
+                  <Link to={`/products/${product.id}`}>
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                    />
+                  </Link>
 
                   {/* Add to Cart */}
                   <button

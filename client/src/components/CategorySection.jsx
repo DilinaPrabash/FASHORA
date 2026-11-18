@@ -1,16 +1,24 @@
 
+import { Link } from "react-router-dom";
+
 const categories = [
   {
     name: "Women",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800",
+    image:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800",
+    link: "/products?category=Women",
   },
   {
     name: "Men",
-    image: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800",
+    image:
+      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800",
+    link: "/products?category=Men",
   },
   {
     name: "Accessories",
-    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+    image:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+    link: "/products?category=Accessories",
   },
 ];
 
@@ -19,6 +27,7 @@ export default function CategorySection() {
     <section className="bg-[#0b0b0b] text-white px-6 md:px-10 py-24">
       <div className="max-w-7xl mx-auto">
 
+        {/* Section Heading */}
         <div className="text-center mb-14">
           <p className="text-[#d6bd91] uppercase tracking-[0.3em] text-xs mb-4">
             Discover Your Style
@@ -29,20 +38,26 @@ export default function CategorySection() {
           </h2>
         </div>
 
+        {/* Category Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
           {categories.map((category) => (
-            <div
+            <Link
               key={category.name}
-              className="relative h-[420px] overflow-hidden group cursor-pointer"
+              to={category.link}
+              className="relative h-[420px] overflow-hidden group cursor-pointer block"
             >
+              {/* Category Image */}
               <img
                 src={category.image}
                 alt={category.name}
+                loading="lazy"
                 className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
               />
 
+              {/* Dark Overlay */}
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition" />
 
+              {/* Category Content */}
               <div className="absolute bottom-10 left-8">
                 <h3 className="font-['Cormorant_Garamond'] text-4xl mb-3">
                   {category.name}
@@ -52,7 +67,7 @@ export default function CategorySection() {
                   Explore Collection →
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
