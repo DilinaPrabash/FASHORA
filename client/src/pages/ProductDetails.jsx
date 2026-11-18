@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ShoppingBag, ArrowLeft, Minus, Plus } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 const products = [
   {
@@ -9,8 +10,10 @@ const products = [
     name: "Elegant Summer Dress",
     category: "Women",
     price: 8500,
-    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=900",
-    description: "An elegant summer dress designed for effortless style and comfort.",
+    image:
+      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=900",
+    description:
+      "An elegant summer dress designed for effortless style and comfort.",
     sizes: ["S", "M", "L", "XL"],
   },
   {
@@ -18,8 +21,10 @@ const products = [
     name: "Classic Men's Outfit",
     category: "Men",
     price: 12000,
-    image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=900",
-    description: "A timeless outfit combining modern style with everyday comfort.",
+    image:
+      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=900",
+    description:
+      "A timeless outfit combining modern style with everyday comfort.",
     sizes: ["S", "M", "L", "XL"],
   },
   {
@@ -27,8 +32,10 @@ const products = [
     name: "Luxury Handbag",
     category: "Accessories",
     price: 6500,
-    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=900",
-    description: "A sophisticated accessory to complete your personal style.",
+    image:
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=900",
+    description:
+      "A sophisticated accessory to complete your personal style.",
     sizes: [],
   },
   {
@@ -36,14 +43,18 @@ const products = [
     name: "Premium Casual Shoes",
     category: "Shoes",
     price: 9500,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900",
-    description: "Premium casual footwear designed for everyday comfort.",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900",
+    description:
+      "Premium casual footwear designed for everyday comfort.",
     sizes: ["40", "41", "42", "43"],
   },
 ];
 
 export default function ProductDetails() {
   const { id } = useParams();
+
+  const { addToCart } = useCart();
 
   const product = products.find((item) => item.id === Number(id));
 
@@ -56,6 +67,7 @@ export default function ProductDetails() {
         <h1 className="text-4xl font-['Cormorant_Garamond']">
           Product Not Found
         </h1>
+
         <Link to="/products" className="text-[#d6bd91] mt-5">
           Back to Shop
         </Link>
@@ -68,6 +80,12 @@ export default function ProductDetails() {
       alert("Please select a size.");
       return;
     }
+
+    addToCart({
+      ...product,
+      selectedSize,
+      quantity,
+    });
 
     alert(`${product.name} added to cart!`);
   };
@@ -86,6 +104,7 @@ export default function ProductDetails() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
 
+          {/* Product Image */}
           <div className="h-[450px] md:h-[650px] overflow-hidden bg-[#171717]">
             <img
               src={product.image}
@@ -94,6 +113,7 @@ export default function ProductDetails() {
             />
           </div>
 
+          {/* Product Information */}
           <div className="flex flex-col justify-center">
 
             <p className="text-[#d6bd91] text-xs tracking-[0.3em] uppercase mb-5">
@@ -114,6 +134,7 @@ export default function ProductDetails() {
               {product.description}
             </p>
 
+            {/* Size Selection */}
             {product.sizes.length > 0 && (
               <div className="mt-10">
                 <p className="text-xs uppercase tracking-widest mb-5">
@@ -124,6 +145,7 @@ export default function ProductDetails() {
                   {product.sizes.map((size) => (
                     <button
                       key={size}
+                      type="button"
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 border text-sm transition ${
                         selectedSize === size
@@ -138,6 +160,7 @@ export default function ProductDetails() {
               </div>
             )}
 
+            {/* Quantity */}
             <div className="mt-10">
               <p className="text-xs uppercase tracking-widest mb-5">
                 Quantity
@@ -145,7 +168,10 @@ export default function ProductDetails() {
 
               <div className="flex items-center border border-white/20 w-fit">
                 <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  type="button"
+                  onClick={() =>
+                    setQuantity((q) => Math.max(1, q - 1))
+                  }
                   className="p-3 hover:text-[#d6bd91]"
                 >
                   <Minus size={16} />
@@ -154,6 +180,7 @@ export default function ProductDetails() {
                 <span className="px-5 text-sm">{quantity}</span>
 
                 <button
+                  type="button"
                   onClick={() => setQuantity((q) => q + 1)}
                   className="p-3 hover:text-[#d6bd91]"
                 >
@@ -162,7 +189,9 @@ export default function ProductDetails() {
               </div>
             </div>
 
+            {/* Add to Cart */}
             <button
+              type="button"
               onClick={handleAddToCart}
               className="mt-10 w-full bg-[#d6bd91] text-black py-5 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] hover:bg-white transition"
             >
