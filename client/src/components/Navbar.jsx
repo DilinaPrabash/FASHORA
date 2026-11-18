@@ -35,13 +35,15 @@ export default function Navbar() {
             Accessories
           </Link>
 
-          <Link to="/products" className="hover:text-[#d6bd91] transition">
-            Collections
-          </Link>
 
           <Link to="/products" className="hover:text-[#d6bd91] transition">
             Shop
           </Link>
+
+          <Link to="/collections" className="hover:text-[#d6bd91] transition">
+             Collections
+          </Link>
+
         </div>
 
         <div className="flex items-center gap-5 text-white">

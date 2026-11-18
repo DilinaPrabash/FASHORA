@@ -1,9 +1,13 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Products from "./pages/Products";
 import CategorySection from "./components/CategorySection";
 import FeaturedProducts from "./components/FeaturedProducts";
+
+import Home from "./pages/Home";
+import Products from "./pages/Products";
+import Collections from "./pages/Collections";
 
 function HomePage() {
   return (
@@ -23,6 +27,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/collections" element={<Collections />} />
       </Routes>
     </BrowserRouter>
   );
