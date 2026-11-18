@@ -1,5 +1,6 @@
 
 import { Search, ShoppingBag, User, Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
@@ -10,24 +11,53 @@ export default function Navbar() {
           <Menu size={23} />
         </button>
 
-        <a href="/" className="text-3xl font-semibold tracking-[0.18em] text-[#d6bd91]">
+        <Link
+          to="/"
+          className="text-3xl font-semibold tracking-[0.18em] text-[#d6bd91]"
+        >
           FASHORA
-        </a>
+        </Link>
 
         <div className="hidden md:flex items-center gap-9 text-sm text-gray-300">
-          <a href="#" className="hover:text-[#d6bd91] transition">Home</a>
-          <a href="#" className="hover:text-[#d6bd91] transition">Women</a>
-          <a href="#" className="hover:text-[#d6bd91] transition">Men</a>
-          <a href="#" className="hover:text-[#d6bd91] transition">Accessories</a>
-          <a href="#" className="hover:text-[#d6bd91] transition">Collections</a>
+          <Link to="/" className="hover:text-[#d6bd91] transition">
+            Home
+          </Link>
+
+          <Link to="/products?category=Women" className="hover:text-[#d6bd91] transition">
+            Women
+          </Link>
+
+          <Link to="/products?category=Men" className="hover:text-[#d6bd91] transition">
+            Men
+          </Link>
+
+          <Link to="/products?category=Accessories" className="hover:text-[#d6bd91] transition">
+            Accessories
+          </Link>
+
+          <Link to="/products" className="hover:text-[#d6bd91] transition">
+            Collections
+          </Link>
+
+          <Link to="/products" className="hover:text-[#d6bd91] transition">
+            Shop
+          </Link>
         </div>
 
         <div className="flex items-center gap-5 text-white">
-          <button className="hover:text-[#d6bd91]"><Search size={20} /></button>
-          <button className="hover:text-[#d6bd91]"><User size={20} /></button>
-          <button className="hover:text-[#d6bd91] relative">
+          <button className="hover:text-[#d6bd91]" aria-label="Search">
+            <Search size={20} />
+          </button>
+
+          <button className="hover:text-[#d6bd91]" aria-label="Account">
+            <User size={20} />
+          </button>
+
+          <button className="hover:text-[#d6bd91] relative" aria-label="Shopping cart">
             <ShoppingBag size={20} />
-            <span className="absolute -top-2 -right-2 bg-[#d6bd91] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            <span className="absolute -top-2 -right-2 bg-[#d6bd91] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              0
+            </span>
           </button>
         </div>
 
