@@ -1,10 +1,20 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -16,15 +26,53 @@ export default function Login() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Frontend demo only. Backend authentication will be added later.
-    alert("Login UI is working! Backend connection is coming soon.");
+    setLoading(true);
+    setError("");
 
-    console.log("Login email:", formData.email);
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Save JWT token
+      localStorage.setItem("token", data.token);
+
+      // Save user details
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to Home
+      navigate("/");
+
+    } catch (err) {
+      setError(
+        err.message || "Unable to connect to the server"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass =
@@ -170,13 +218,21 @@ export default function Login() {
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-4 py-3">
+                  {error}
+                </p>
+              )}
+
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-3 bg-[#d6bd91] text-black py-4 mt-3 text-xs font-semibold tracking-[0.2em] hover:bg-white transition"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 bg-[#d6bd91] text-black py-4 mt-3 text-xs font-semibold tracking-[0.2em] hover:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                SIGN IN
-                <ArrowRight size={16} />
+                {loading ? "SIGNING IN..." : "SIGN IN"}
+                {!loading && <ArrowRight size={16} />}
               </button>
             </form>
 
