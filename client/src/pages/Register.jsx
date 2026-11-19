@@ -1,11 +1,23 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -19,28 +31,70 @@ export default function Register() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
+    setSuccess("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setError("");
+    setSuccess("");
+
+    // Validate passwords
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
 
     if (formData.password.length < 6) {
-      alert("Password must contain at least 6 characters!");
+      setError("Password must contain at least 6 characters!");
       return;
     }
 
-    // Frontend demo only. Backend registration will be connected later.
-    alert("Registration UI is working! Backend connection is coming soon.");
+    setLoading(true);
 
-    console.log("Registration data:", {
-      fullName: formData.fullName,
-      email: formData.email,
-    });
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName.trim(),
+            email: formData.email.trim(),
+            password: formData.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      setSuccess("Account created successfully! Redirecting to login...");
+
+      // Redirect to Login page
+      setTimeout(() => {
+        navigate("/login", {
+          state: {
+            registeredEmail: formData.email.trim(),
+          },
+        });
+      }, 1200);
+
+    } catch (err) {
+      setError(
+        err.message || "Unable to connect to the server"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass =
@@ -240,13 +294,29 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-4 py-3">
+                  {error}
+                </p>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-4 py-3">
+                  {success}
+                </p>
+              )}
+
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-3 bg-[#d6bd91] text-black py-4 mt-3 text-xs font-semibold tracking-[0.2em] hover:bg-white transition"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 bg-[#d6bd91] text-black py-4 mt-3 text-xs font-semibold tracking-[0.2em] hover:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                CREATE ACCOUNT
-                <ArrowRight size={16} />
+                {loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
+
+                {!loading && <ArrowRight size={16} />}
               </button>
             </form>
 
