@@ -1,10 +1,54 @@
 
-import { Search, ShoppingBag, User, Menu } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Search,
+  ShoppingBag,
+  User,
+  Menu,
+  LogOut,
+} from "lucide-react";
+
+import {
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+
 import { useCart } from "../context/CartContext";
 
 export default function Navbar() {
   const { cartCount } = useCart();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [user, setUser] = useState(null);
+
+  // Get logged-in user details
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (token && savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+  }, [location]);
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setUser(null);
+
+    navigate("/");
+  };
 
   return (
     <header className="w-full bg-[#0b0b0b] border-b border-white/10">
@@ -62,13 +106,53 @@ export default function Navbar() {
         {/* Navbar Icons */}
         <div className="flex items-center gap-5 text-white">
 
-          <button className="hover:text-[#d6bd91]" aria-label="Search">
+          {/* Search */}
+          <button
+            className="hover:text-[#d6bd91]"
+            aria-label="Search"
+          >
             <Search size={20} />
           </button>
 
-          <button className="hover:text-[#d6bd91]" aria-label="Account">
-            <User size={20} />
-          </button>
+          {/* Authentication */}
+          {user ? (
+            <div className="flex items-center gap-3">
+
+              <div className="hidden sm:flex items-center gap-2 text-sm">
+                <User size={18} className="text-[#d6bd91]" />
+
+                <span className="text-gray-200">
+                  {user.fullName?.split(" ")[0] || "Account"}
+                </span>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-sm text-gray-300 hover:text-[#d6bd91] transition"
+                title="Logout"
+              >
+                <LogOut size={19} />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 text-sm">
+              <Link
+                to="/login"
+                className="hover:text-[#d6bd91] transition"
+              >
+                Login
+              </Link>
+
+              <Link
+                to="/register"
+                className="hidden sm:inline text-[#d6bd91] hover:text-white transition"
+              >
+                Register
+              </Link>
+            </div>
+          )}
 
           {/* Shopping Cart */}
           <Link
