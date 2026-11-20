@@ -1,32 +1,101 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, ArrowLeft, ShoppingBag } from "lucide-react";
+import {
+  CheckCircle,
+  ArrowLeft,
+  ShoppingBag,
+  LoaderCircle,
+} from "lucide-react";
 import { useCart } from "../context/CartContext";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Checkout() {
   const { cartItems, cartTotal, clearCart } = useCart();
 
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [orderId, setOrderId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Demo delivery fee
   const shippingFee = 500;
   const grandTotal = cartTotal + shippingFee;
 
   const formatPrice = (price) =>
-    `LKR ${price.toLocaleString("en-LK")}`;
+    `LKR ${Number(price).toLocaleString("en-LK")}`;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get("fullName");
+    if (isSubmitting) return;
 
-    setCustomerName(name);
-    setIsOrderPlaced(true);
-    clearCart();
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Please login before placing your order.");
+      }
+
+      const formData = new FormData(e.currentTarget);
+
+      const orderData = {
+        customerName: formData.get("fullName"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+
+        items: cartItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          selectedSize: item.selectedSize || "",
+        })),
+
+        shippingAddress: {
+          street: formData.get("address"),
+          city: formData.get("city"),
+          postalCode: formData.get("postalCode"),
+          notes: formData.get("notes") || "",
+        },
+
+        paymentMethod: "COD",
+      };
+
+      const response = await fetch(`${API_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to place your order.");
+      }
+
+      setCustomerName(orderData.customerName);
+      setOrderId(data.order._id);
+
+      // Clear cart only after successful order creation
+      clearCart();
+
+      setIsOrderPlaced(true);
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setErrorMessage(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Order Confirmation
   if (isOrderPlaced) {
     return (
       <div className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center px-6 py-20">
@@ -41,10 +110,22 @@ export default function Checkout() {
             Thank You, {customerName}!
           </h1>
 
-          <p className="text-gray-400 leading-7 mb-8">
+          <p className="text-gray-400 leading-7 mb-5">
             Your order has been placed successfully.
-            This is a demo confirmation. Your order has not
-            been saved to a server yet.
+            We will contact you regarding your delivery.
+          </p>
+
+          <div className="bg-[#151515] border border-white/10 p-4 mb-8">
+            <p className="text-xs text-gray-500 mb-2">
+              YOUR ORDER ID
+            </p>
+            <p className="text-[#d6bd91] text-sm break-all">
+              {orderId}
+            </p>
+          </div>
+
+          <p className="text-gray-400 text-sm mb-8">
+            Payment Method: Cash on Delivery
           </p>
 
           <Link
@@ -59,6 +140,7 @@ export default function Checkout() {
     );
   }
 
+  // Empty Cart
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#0b0b0b] text-white flex flex-col items-center justify-center px-6 text-center">
@@ -300,15 +382,28 @@ export default function Checkout() {
                 </div>
 
                 <p className="text-xs text-gray-500 mt-5">
-                  Delivery fee is a demo amount and can be changed
-                  when the backend is implemented.
+                  Delivery fee: LKR 500
                 </p>
+
+                {errorMessage && (
+                  <div className="mt-5 p-4 border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
+                    {errorMessage}
+                  </div>
+                )}
 
                 <button
                   type="submit"
-                  className="w-full bg-[#d6bd91] text-black py-4 mt-7 tracking-[2px] text-sm font-medium hover:bg-white transition"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#d6bd91] text-black py-4 mt-7 tracking-[2px] text-sm font-medium hover:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  PLACE ORDER
+                  {isSubmitting ? (
+                    <>
+                      <LoaderCircle size={18} className="animate-spin" />
+                      PLACING ORDER...
+                    </>
+                  ) : (
+                    "PLACE ORDER"
+                  )}
                 </button>
 
                 <p className="text-center text-xs text-gray-500 mt-4">
