@@ -15,8 +15,10 @@ import Collections from "./pages/Collections";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import MyOrders from "./pages/MyOrders";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLayout from "./components/AdminLayout";
 
@@ -49,11 +51,7 @@ export default function App() {
           {/* Customer Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
-          </Route>
-
-          {/* Admin Protected Routes */}
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/my-orders" element={<MyOrders />} />
           </Route>
 
           {/* Admin Protected Routes */}

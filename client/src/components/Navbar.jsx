@@ -6,6 +6,7 @@ import {
   User,
   Menu,
   LogOut,
+  Package,
 } from "lucide-react";
 
 import {
@@ -112,6 +113,18 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3">
 
+              {/* Customer My Orders */}
+              {user.role === "customer" && (
+                <Link
+                  to="/my-orders"
+                  className="hidden sm:flex items-center gap-2 text-sm text-gray-300 hover:text-[#d6bd91] transition"
+                >
+                  <Package size={18} />
+                  <span>My Orders</span>
+                </Link>
+              )}
+
+              {/* Admin Dashboard */}
               {user.role === "admin" && (
                 <Link
                   to="/admin"
