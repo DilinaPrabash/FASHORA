@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const dns = require("dns");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
+const productRoutes = require("./routes/productRoutes");
 
 require("dotenv").config();
 
@@ -21,7 +22,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/products", productRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to FASHORA API!" });
 });

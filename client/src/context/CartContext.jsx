@@ -1,5 +1,10 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const CartContext = createContext();
 
@@ -21,24 +26,60 @@ export function CartProvider({ children }) {
 
   // Add product
   const addToCart = (product) => {
-    setCartItems((previousItems) => {
-      const existingProduct = previousItems.find(
-        (item) =>
-          item.id === product.id &&
-          item.selectedSize === product.selectedSize
-      );
+    const stock = Number(product.stock);
+    const requestedQuantity = Number(product.quantity);
 
-      if (existingProduct) {
-        return previousItems.map((item) =>
+    if (
+      !Number.isFinite(stock) ||
+      stock <= 0 ||
+      !Number.isInteger(requestedQuantity) ||
+      requestedQuantity < 1
+    ) {
+      return {
+        success: false,
+        message: "This product is currently unavailable.",
+      };
+    }
+
+    const existingProduct = cartItems.find(
+      (item) =>
+        item.id === product.id &&
+        item.selectedSize === product.selectedSize
+    );
+
+    const currentQuantity = existingProduct
+      ? existingProduct.quantity
+      : 0;
+
+    const newQuantity = currentQuantity + requestedQuantity;
+
+    if (newQuantity > stock) {
+      return {
+        success: false,
+        message: `Only ${stock} items are available. You already have ${currentQuantity} in your cart.`,
+      };
+    }
+
+    if (existingProduct) {
+      setCartItems((previousItems) =>
+        previousItems.map((item) =>
           item.id === product.id &&
           item.selectedSize === product.selectedSize
-            ? { ...item, quantity: item.quantity + product.quantity }
+            ? { ...item, quantity: newQuantity }
             : item
-        );
-      }
+        )
+      );
+    } else {
+      setCartItems((previousItems) => [
+        ...previousItems,
+        product,
+      ]);
+    }
 
-      return [...previousItems, product];
-    });
+    return {
+      success: true,
+      message: "Product added to cart successfully!",
+    };
   };
 
   // Remove product
@@ -46,21 +87,38 @@ export function CartProvider({ children }) {
     setCartItems((previousItems) =>
       previousItems.filter(
         (item) =>
-          !(item.id === productId && item.selectedSize === selectedSize)
+          !(
+            item.id === productId &&
+            item.selectedSize === selectedSize
+          )
       )
     );
   };
 
   // Update quantity
   const updateQuantity = (productId, selectedSize, quantity) => {
-    if (quantity < 1) return;
+    if (!Number.isInteger(quantity) || quantity < 1) return;
 
     setCartItems((previousItems) =>
-      previousItems.map((item) =>
-        item.id === productId && item.selectedSize === selectedSize
-          ? { ...item, quantity }
-          : item
-      )
+      previousItems.map((item) => {
+        if (
+          item.id === productId &&
+          item.selectedSize === selectedSize
+        ) {
+          const stock = Number(item.stock);
+
+          if (!Number.isFinite(stock) || stock <= 0) {
+            return item;
+          }
+
+          return {
+            ...item,
+            quantity: Math.min(quantity, stock),
+          };
+        }
+
+        return item;
+      })
     );
   };
 

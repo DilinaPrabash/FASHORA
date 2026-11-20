@@ -1,80 +1,18 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
+import {
+  Search,
+  SlidersHorizontal,
+  ShoppingBag,
+} from "lucide-react";
 
-// Sample product data
-const products = [
-  {
-    id: 1,
-    name: "Elegant Summer Dress",
-    category: "Women",
-    price: 8500,
-    image:
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=700",
-  },
-  {
-    id: 2,
-    name: "Classic Men's Outfit",
-    category: "Men",
-    price: 12000,
-    image:
-      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=700",
-  },
-  {
-    id: 3,
-    name: "Luxury Handbag",
-    category: "Accessories",
-    price: 6500,
-    image:
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700",
-  },
-  {
-    id: 4,
-    name: "Premium Casual Shoes",
-    category: "Shoes",
-    price: 9500,
-    image:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700",
-  },
-  {
-    id: 5,
-    name: "Women's Fashion Outfit",
-    category: "Women",
-    price: 10500,
-    image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=700",
-  },
-  {
-    id: 6,
-    name: "Men's Casual Style",
-    category: "Men",
-    price: 7800,
-    image:
-      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=700",
-  },
-  {
-    id: 7,
-    name: "Elegant Accessories",
-    category: "Accessories",
-    price: 4500,
-    image:
-      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=700",
-  },
-  {
-    id: 8,
-    name: "Sport Sneakers",
-    category: "Shoes",
-    price: 11500,
-    image:
-      "https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?w=700",
-  },
-];
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const categories = ["All", "Women", "Men", "Shoes", "Accessories"];
 
 export default function Products() {
-  // Read category from URL
   const [searchParams] = useSearchParams();
 
   const categoryFromUrl = searchParams.get("category");
@@ -83,11 +21,39 @@ export default function Products() {
     ? categoryFromUrl
     : "All";
 
-  // States
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] =
     useState(initialCategory);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch products from MongoDB through backend API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(`${API_URL}/products`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load products.");
+        }
+
+        const data = await response.json();
+        setProducts(data);
+      } catch (err) {
+        setError(err.message || "Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Update category when URL changes
   useEffect(() => {
@@ -115,7 +81,7 @@ export default function Products() {
     }
 
     return result;
-  }, [selectedCategory, search, sort]);
+  }, [products, selectedCategory, search, sort]);
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white px-6 md:px-10 py-16">
@@ -140,7 +106,6 @@ export default function Products() {
 
         {/* Search and Sorting */}
         <div className="flex flex-col md:flex-row gap-5 justify-between mb-10">
-
           <div className="relative w-full md:max-w-sm">
             <Search
               size={18}
@@ -191,72 +156,104 @@ export default function Products() {
           ))}
         </div>
 
-        {/* Product Count */}
-        <p className="text-gray-400 text-xs mb-6">
-          Showing {filteredProducts.length} products
-        </p>
-
-        {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="group">
-
-                {/* Product Image */}
-                <div className="relative h-[360px] overflow-hidden bg-[#171717]">
-
-                  <Link to={`/products/${product.id}`}>
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                    />
-                  </Link>
-
-                  {/* Add to Cart */}
-                  <button
-                    type="button"
-                    className="absolute bottom-0 left-0 right-0 bg-[#d6bd91] text-black py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition duration-300"
-                  >
-                    <ShoppingBag size={16} />
-                    Add to Cart
-                  </button>
-                </div>
-
-                {/* Product Details */}
-                <div className="pt-5">
-                  <p className="text-gray-500 text-xs mb-2">
-                    {product.category}
-                  </p>
-
-                  <h3 className="font-['Cormorant_Garamond'] text-2xl">
-                    {product.name}
-                  </h3>
-
-                  <p className="text-[#d6bd91] mt-2 text-sm">
-                    LKR {product.price.toLocaleString("en-LK")}
-                  </p>
-                </div>
-
-              </div>
-            ))}
-
-          </div>
-        ) : (
-          /* Empty State */
+        {/* Loading State */}
+        {loading && (
           <div className="text-center py-24">
-            <h3 className="font-['Cormorant_Garamond'] text-3xl">
-              No Products Found
-            </h3>
-
-            <p className="text-gray-400 text-sm mt-3">
-              Try another search or category.
+            <p className="text-[#d6bd91] text-sm tracking-widest uppercase">
+              Loading Collection...
             </p>
           </div>
         )}
 
+        {/* Error State */}
+        {!loading && error && (
+          <div className="text-center py-24">
+            <h3 className="font-['Cormorant_Garamond'] text-3xl">
+              Unable to Load Products
+            </h3>
+
+            <p className="text-red-400 text-sm mt-3">
+              {error}
+            </p>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 border border-[#d6bd91] text-[#d6bd91] px-6 py-3 text-xs uppercase tracking-widest"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Products */}
+        {!loading && !error && (
+          <>
+            <p className="text-gray-400 text-xs mb-6">
+              Showing {filteredProducts.length} products
+            </p>
+
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+                {filteredProducts.map((product) => (
+                  <div key={product._id} className="group">
+
+                    {/* Product Image */}
+                    <div className="relative h-[360px] overflow-hidden bg-[#171717]">
+                      <Link to={`/products/${product._id}`}>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                        />
+                      </Link>
+
+                      {/* View Product */}
+                      <Link
+                        to={`/products/${product._id}`}
+                        className="absolute bottom-0 left-0 right-0 bg-[#d6bd91] text-black py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition duration-300"
+                      >
+                        <ShoppingBag size={16} />
+                        View Product
+                      </Link>
+                    </div>
+
+                    {/* Product Details */}
+                    <div className="pt-5">
+                      <p className="text-gray-500 text-xs mb-2">
+                        {product.category}
+                      </p>
+
+                      <h3 className="font-['Cormorant_Garamond'] text-2xl">
+                        {product.name}
+                      </h3>
+
+                      <p className="text-[#d6bd91] mt-2 text-sm">
+                        LKR {product.price.toLocaleString("en-LK")}
+                      </p>
+
+                      <p className="text-gray-500 text-xs mt-2">
+                        {product.stock > 0
+                          ? `${product.stock} items available`
+                          : "Out of Stock"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-24">
+                <h3 className="font-['Cormorant_Garamond'] text-3xl">
+                  No Products Found
+                </h3>
+
+                <p className="text-gray-400 text-sm mt-3">
+                  Try another search or category.
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </main>
   );

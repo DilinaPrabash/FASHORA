@@ -1,99 +1,156 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ShoppingBag, ArrowLeft, Minus, Plus } from "lucide-react";
+import {
+  ShoppingBag,
+  ArrowLeft,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { useCart } from "../context/CartContext";
 
-const products = [
-  {
-    id: 1,
-    name: "Elegant Summer Dress",
-    category: "Women",
-    price: 8500,
-    image:
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=900",
-    description:
-      "An elegant summer dress designed for effortless style and comfort.",
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 2,
-    name: "Classic Men's Outfit",
-    category: "Men",
-    price: 12000,
-    image:
-      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=900",
-    description:
-      "A timeless outfit combining modern style with everyday comfort.",
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 3,
-    name: "Luxury Handbag",
-    category: "Accessories",
-    price: 6500,
-    image:
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=900",
-    description:
-      "A sophisticated accessory to complete your personal style.",
-    sizes: [],
-  },
-  {
-    id: 4,
-    name: "Premium Casual Shoes",
-    category: "Shoes",
-    price: 9500,
-    image:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900",
-    description:
-      "Premium casual footwear designed for everyday comfort.",
-    sizes: ["40", "41", "42", "43"],
-  },
-];
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function ProductDetails() {
   const { id } = useParams();
-
   const { addToCart } = useCart();
 
-  const product = products.find((item) => item.id === Number(id));
-
+  const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
 
-  if (!product) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch product from MongoDB
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        setProduct(null);
+
+        const response = await fetch(
+          `${API_URL}/products/${id}`,
+          { signal: controller.signal }
+        );
+
+        if (response.status === 404) {
+          throw new Error("Product not found.");
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to load product.");
+        }
+
+        const data = await response.json();
+
+        setProduct(data);
+        setSelectedSize("");
+        setQuantity(1);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setError(err.message || "Something went wrong.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProduct();
+
+    return () => controller.abort();
+  }, [id]);
+
+  // Loading state
+  if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] text-white flex flex-col items-center justify-center">
+      <main className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center">
+        <p className="text-[#d6bd91] text-sm tracking-widest uppercase">
+          Loading Product...
+        </p>
+      </main>
+    );
+  }
+
+  // Error state
+  if (error || !product) {
+    return (
+      <main className="min-h-screen bg-[#0b0b0b] text-white flex flex-col items-center justify-center px-6">
         <h1 className="text-4xl font-['Cormorant_Garamond']">
-          Product Not Found
+          {error === "Product not found."
+            ? "Product Not Found"
+            : "Unable to Load Product"}
         </h1>
 
-        <Link to="/products" className="text-[#d6bd91] mt-5">
+        <p className="text-gray-400 text-sm mt-4 text-center">
+          {error || "This product is unavailable."}
+        </p>
+
+        <Link
+          to="/products"
+          className="text-[#d6bd91] mt-6 hover:text-white"
+        >
           Back to Shop
         </Link>
       </main>
     );
   }
 
+  const sizes = Array.isArray(product.sizes)
+    ? product.sizes
+    : [];
+
+  const stock = Math.max(0, Number(product.stock) || 0);
+
+  const isInStock =
+    product.isAvailable !== false && stock > 0;
+
+  const price = Number(product.price) || 0;
+
+  // Add product to cart
   const handleAddToCart = () => {
-    if (product.sizes.length > 0 && !selectedSize) {
+    if (!isInStock) {
+      alert("Sorry, this product is out of stock.");
+      return;
+    }
+
+    if (sizes.length > 0 && !selectedSize) {
       alert("Please select a size.");
       return;
     }
 
-    addToCart({
+    if (quantity < 1 || quantity > stock) {
+      alert("Requested quantity is not available.");
+      return;
+    }
+
+    const result = addToCart({
       ...product,
+      id: product._id,
       selectedSize,
       quantity,
     });
 
-    alert(`${product.name} added to cart!`);
+    if (result?.success) {
+      alert(`${product.name} added to cart!`);
+    } else {
+      alert(
+        result?.message || "Unable to add this product to cart."
+      );
+    }
   };
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white px-6 md:px-10 py-16">
       <div className="max-w-7xl mx-auto">
 
+        {/* Back to Shop */}
         <Link
           to="/products"
           className="inline-flex items-center gap-2 text-gray-400 hover:text-[#d6bd91] mb-10 text-sm"
@@ -110,6 +167,9 @@ export default function ProductDetails() {
               src={product.image}
               alt={product.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
           </div>
 
@@ -125,29 +185,44 @@ export default function ProductDetails() {
             </h1>
 
             <p className="text-[#d6bd91] text-xl mt-6">
-              LKR {product.price.toLocaleString("en-LK")}
+              LKR {price.toLocaleString("en-LK")}
             </p>
 
             <div className="border-t border-white/10 my-8" />
 
+            {/* Description */}
             <p className="text-gray-400 leading-7 text-sm">
               {product.description}
             </p>
 
+            {/* Stock Status */}
+            <div className="mt-6">
+              {isInStock ? (
+                <p className="text-green-500 text-sm">
+                  In Stock - {stock} items available
+                </p>
+              ) : (
+                <p className="text-red-400 text-sm">
+                  Out of Stock
+                </p>
+              )}
+            </div>
+
             {/* Size Selection */}
-            {product.sizes.length > 0 && (
+            {sizes.length > 0 && (
               <div className="mt-10">
                 <p className="text-xs uppercase tracking-widest mb-5">
                   Select Size
                 </p>
 
                 <div className="flex gap-3 flex-wrap">
-                  {product.sizes.map((size) => (
+                  {sizes.map((size) => (
                     <button
                       key={size}
                       type="button"
+                      disabled={!isInStock}
                       onClick={() => setSelectedSize(size)}
-                      className={`w-12 h-12 border text-sm transition ${
+                      className={`w-12 h-12 border text-sm transition disabled:opacity-40 disabled:cursor-not-allowed ${
                         selectedSize === size
                           ? "bg-[#d6bd91] text-black border-[#d6bd91]"
                           : "border-white/20 hover:border-[#d6bd91]"
@@ -169,20 +244,26 @@ export default function ProductDetails() {
               <div className="flex items-center border border-white/20 w-fit">
                 <button
                   type="button"
+                  disabled={!isInStock || quantity <= 1}
                   onClick={() =>
                     setQuantity((q) => Math.max(1, q - 1))
                   }
-                  className="p-3 hover:text-[#d6bd91]"
+                  className="p-3 hover:text-[#d6bd91] disabled:opacity-40"
                 >
                   <Minus size={16} />
                 </button>
 
-                <span className="px-5 text-sm">{quantity}</span>
+                <span className="px-5 text-sm">
+                  {quantity}
+                </span>
 
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="p-3 hover:text-[#d6bd91]"
+                  disabled={!isInStock || quantity >= stock}
+                  onClick={() =>
+                    setQuantity((q) => Math.min(stock, q + 1))
+                  }
+                  className="p-3 hover:text-[#d6bd91] disabled:opacity-40"
                 >
                   <Plus size={16} />
                 </button>
@@ -193,10 +274,11 @@ export default function ProductDetails() {
             <button
               type="button"
               onClick={handleAddToCart}
-              className="mt-10 w-full bg-[#d6bd91] text-black py-5 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] hover:bg-white transition"
+              disabled={!isInStock}
+              className="mt-10 w-full bg-[#d6bd91] text-black py-5 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] hover:bg-white transition disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
             >
               <ShoppingBag size={18} />
-              Add to Cart
+              {isInStock ? "Add to Cart" : "Out of Stock"}
             </button>
 
           </div>
