@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLayout from "./components/AdminLayout";
+import AdminOrders from "./pages/AdminOrders";
 
 function HomePage() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
+              <Route path="orders" element={<AdminOrders />} />
             </Route>
           </Route>
         </Routes>
