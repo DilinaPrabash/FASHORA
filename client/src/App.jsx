@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import CategorySection from "./components/CategorySection";
 import FeaturedProducts from "./components/FeaturedProducts";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 import Home from "./pages/Home";
 import Products from "./pages/Products";
@@ -16,6 +17,8 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminLayout from "./components/AdminLayout";
 
 function HomePage() {
   return (
@@ -43,9 +46,21 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
+          {/* Customer Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
+          </Route>
+
+          {/* Admin Protected Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+
+          {/* Admin Protected Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>

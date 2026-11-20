@@ -24,7 +24,6 @@ export default function Navbar() {
 
   const [user, setUser] = useState(null);
 
-  // Get logged-in user details
   useEffect(() => {
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
@@ -40,13 +39,11 @@ export default function Navbar() {
     }
   }, [location]);
 
-  // Logout function
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setUser(null);
-
     navigate("/");
   };
 
@@ -107,10 +104,7 @@ export default function Navbar() {
         <div className="flex items-center gap-5 text-white">
 
           {/* Search */}
-          <button
-            className="hover:text-[#d6bd91]"
-            aria-label="Search"
-          >
+          <button className="hover:text-[#d6bd91]" aria-label="Search">
             <Search size={20} />
           </button>
 
@@ -118,9 +112,17 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3">
 
+              {user.role === "admin" && (
+                <Link
+                  to="/admin"
+                  className="hidden sm:inline text-[#d6bd91] hover:text-white text-sm transition"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+
               <div className="hidden sm:flex items-center gap-2 text-sm">
                 <User size={18} className="text-[#d6bd91]" />
-
                 <span className="text-gray-200">
                   {user.fullName?.split(" ")[0] || "Account"}
                 </span>
@@ -138,10 +140,7 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-3 text-sm">
-              <Link
-                to="/login"
-                className="hover:text-[#d6bd91] transition"
-              >
+              <Link to="/login" className="hover:text-[#d6bd91] transition">
                 Login
               </Link>
 
