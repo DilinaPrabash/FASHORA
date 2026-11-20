@@ -8,6 +8,7 @@ import {
   Plus,
   X,
   ImagePlus,
+  Pencil,
 } from "lucide-react";
 
 const API_URL =
@@ -29,6 +30,8 @@ export default function AdminProducts() {
   const [error, setError] = useState("");
 
   const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+
   const [formData, setFormData] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -69,9 +72,9 @@ export default function AdminProducts() {
     fetchProducts();
   }, []);
 
-  // Clean up image preview URL
+  // Clear image preview
   const clearImagePreview = () => {
-    if (previewUrl) {
+    if (previewUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
 
@@ -82,16 +85,40 @@ export default function AdminProducts() {
   // Open Add Product Modal
   const openAddModal = () => {
     clearImagePreview();
+    setEditingProduct(null);
     setFormData(initialForm);
     setFormError("");
     setShowModal(true);
   };
 
-  // Close Add Product Modal
-  const closeAddModal = () => {
+  // Open Edit Product Modal
+  const openEditModal = (product) => {
+    clearImagePreview();
+
+    setEditingProduct(product);
+
+    setFormData({
+      name: product.name || "",
+      category: product.category || "Women",
+      price: product.price ?? "",
+      description: product.description || "",
+      sizes: Array.isArray(product.sizes)
+        ? product.sizes.join(", ")
+        : "",
+      stock: product.stock ?? 0,
+    });
+
+    setPreviewUrl(product.image || "");
+    setFormError("");
+    setShowModal(true);
+  };
+
+  // Close modal
+  const closeModal = () => {
     if (saving) return;
 
     clearImagePreview();
+    setEditingProduct(null);
     setFormData(initialForm);
     setFormError("");
     setShowModal(false);
@@ -129,7 +156,7 @@ export default function AdminProducts() {
     }
   };
 
-  // Handle form input changes
+  // Handle form changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -159,7 +186,7 @@ export default function AdminProducts() {
       return;
     }
 
-    if (previewUrl) {
+    if (previewUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
 
@@ -167,11 +194,51 @@ export default function AdminProducts() {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  // Upload image and create product
-  const handleAddProduct = async (e) => {
+  // Upload selected image to Supabase
+  const uploadImage = async (token) => {
+    if (!selectedImage) return null;
+
+    setUploadingImage(true);
+
+    const imageFormData = new FormData();
+    imageFormData.append("image", selectedImage);
+
+    const response = await fetch(
+      `${API_URL}/products/upload-image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: imageFormData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Image upload failed");
+    }
+
+    if (!data.imageUrl) {
+      throw new Error("Image URL was not returned by the server.");
+    }
+
+    setUploadingImage(false);
+
+    return data.imageUrl;
+  };
+
+  // Add or Update Product
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedImage) {
+    if (!editingProduct && !selectedImage) {
+      setFormError("Please select a product image.");
+      return;
+    }
+
+    if (editingProduct && !previewUrl) {
       setFormError("Please select a product image.");
       return;
     }
@@ -186,40 +253,16 @@ export default function AdminProducts() {
         throw new Error("Please login as an admin.");
       }
 
-      // Step 1: Upload image to Supabase
-      setUploadingImage(true);
+      // Upload a new image only if selected
+      let imageUrl = editingProduct
+        ? editingProduct.image
+        : null;
 
-      const imageFormData = new FormData();
-      imageFormData.append("image", selectedImage);
-
-      const uploadResponse = await fetch(
-        `${API_URL}/products/upload-image`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: imageFormData,
-        }
-      );
-
-      const uploadData = await uploadResponse.json();
-
-      if (!uploadResponse.ok) {
-        throw new Error(
-          uploadData.message || "Image upload failed"
-        );
+      if (selectedImage) {
+        imageUrl = await uploadImage(token);
       }
 
-      if (!uploadData.imageUrl) {
-        throw new Error("Image URL was not returned by the server.");
-      }
-
-      const imageUrl = uploadData.imageUrl;
-
-      setUploadingImage(false);
-
-      // Step 2: Create product in MongoDB
+      // Prepare product data
       const productData = {
         name: formData.name.trim(),
         category: formData.category,
@@ -233,8 +276,15 @@ export default function AdminProducts() {
         stock: Number(formData.stock),
       };
 
-      const response = await fetch(`${API_URL}/products`, {
-        method: "POST",
+      // Update existing product or create new product
+      const isEditing = Boolean(editingProduct);
+
+      const url = isEditing
+        ? `${API_URL}/products/${editingProduct._id}`
+        : `${API_URL}/products`;
+
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -245,18 +295,28 @@ export default function AdminProducts() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to add product");
+        throw new Error(
+          data.message ||
+            (isEditing
+              ? "Failed to update product"
+              : "Failed to add product")
+        );
       }
 
-      // Step 3: Reset form
+      // Reset modal
       clearImagePreview();
       setFormData(initialForm);
+      setEditingProduct(null);
       setShowModal(false);
 
-      // Step 4: Refresh products
+      // Refresh product list
       await fetchProducts();
 
-      alert("Product added successfully!");
+      alert(
+        isEditing
+          ? "Product updated successfully!"
+          : "Product added successfully!"
+      );
     } catch (err) {
       setFormError(err.message);
     } finally {
@@ -284,6 +344,7 @@ export default function AdminProducts() {
           <h1 className="text-3xl font-bold">
             Product Management
           </h1>
+
           <p className="mt-2 text-gray-400">
             Manage your store products and inventory.
           </p>
@@ -323,6 +384,7 @@ export default function AdminProducts() {
             <p className="text-sm text-gray-400">
               Total Products
             </p>
+
             <h2 className="text-2xl font-bold">
               {products.length}
             </h2>
@@ -386,7 +448,7 @@ export default function AdminProducts() {
       {/* Products Table */}
       {!loading && !error && filteredProducts.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#151515]">
-          <table className="w-full min-w-[750px] text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="border-b border-white/10 bg-[#1c1c1c] text-gray-400">
               <tr>
                 <th className="px-5 py-4">Product</th>
@@ -444,14 +506,24 @@ export default function AdminProducts() {
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-center">
-                    <button
-                      onClick={() => handleDelete(product._id)}
-                      className="rounded-lg p-2 text-red-400 transition hover:bg-red-500/10"
-                      title="Delete Product"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="rounded-lg p-2 text-[#d6bd91] transition hover:bg-[#d6bd91]/10"
+                        title="Edit Product"
+                      >
+                        <Pencil size={18} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-500/10"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -460,7 +532,7 @@ export default function AdminProducts() {
         </div>
       )}
 
-      {/* Add Product Modal */}
+      {/* Add / Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4">
           <div className="my-auto w-full max-w-2xl rounded-xl border border-white/10 bg-[#151515] shadow-2xl">
@@ -469,17 +541,19 @@ export default function AdminProducts() {
             <div className="flex items-center justify-between border-b border-white/10 p-5">
               <div>
                 <h2 className="text-xl font-bold">
-                  Add New Product
+                  {editingProduct ? "Edit Product" : "Add New Product"}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-400">
-                  Enter the product details below.
+                  {editingProduct
+                    ? "Update the product information."
+                    : "Enter the product details below."}
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={closeAddModal}
+                onClick={closeModal}
                 disabled={saving}
                 className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white disabled:opacity-50"
               >
@@ -489,7 +563,7 @@ export default function AdminProducts() {
 
             {/* Form */}
             <form
-              onSubmit={handleAddProduct}
+              onSubmit={handleSubmit}
               className="space-y-5 p-5"
             >
               <div className="grid gap-5 sm:grid-cols-2">
@@ -551,7 +625,7 @@ export default function AdminProducts() {
                   />
                 </div>
 
-                {/* Product Image Upload */}
+                {/* Product Image */}
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm text-gray-300">
                     Product Image *
@@ -564,7 +638,9 @@ export default function AdminProducts() {
                     />
 
                     <span className="text-sm font-medium text-white">
-                      Choose Product Image
+                      {editingProduct
+                        ? "Choose New Image (Optional)"
+                        : "Choose Product Image"}
                     </span>
 
                     <span className="mt-1 text-xs text-gray-500">
@@ -573,7 +649,7 @@ export default function AdminProducts() {
 
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      accept="image/*"
                       onChange={handleImageChange}
                       disabled={saving}
                       className="hidden"
@@ -584,7 +660,9 @@ export default function AdminProducts() {
                   {previewUrl && (
                     <div className="mt-4">
                       <p className="mb-2 text-sm text-gray-400">
-                        Image Preview
+                        {selectedImage
+                          ? "New Image Preview"
+                          : "Current Product Image"}
                       </p>
 
                       <div className="relative inline-block">
@@ -599,14 +677,17 @@ export default function AdminProducts() {
                           disabled={saving}
                           onClick={clearImagePreview}
                           className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white disabled:opacity-50"
+                          title="Remove image"
                         >
                           <X size={16} />
                         </button>
                       </div>
 
-                      <p className="mt-2 text-xs text-gray-400">
-                        {selectedImage?.name}
-                      </p>
+                      {selectedImage && (
+                        <p className="mt-2 text-xs text-gray-400">
+                          {selectedImage.name}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -691,7 +772,7 @@ export default function AdminProducts() {
               <div className="flex flex-col-reverse justify-end gap-3 border-t border-white/10 pt-5 sm:flex-row">
                 <button
                   type="button"
-                  onClick={closeAddModal}
+                  onClick={closeModal}
                   disabled={saving}
                   className="rounded-lg border border-white/20 px-6 py-3 text-sm text-gray-300 hover:bg-white/5 disabled:opacity-50"
                 >
@@ -713,8 +794,12 @@ export default function AdminProducts() {
                   {saving
                     ? uploadingImage
                       ? "Uploading Image..."
-                      : "Saving Product..."
-                    : "Save Product"}
+                      : editingProduct
+                        ? "Updating Product..."
+                        : "Saving Product..."
+                    : editingProduct
+                      ? "Update Product"
+                      : "Save Product"}
                 </button>
               </div>
             </form>
