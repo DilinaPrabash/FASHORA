@@ -68,7 +68,9 @@ const createOrder = async (req, res) => {
         }
 
         if (!product.isAvailable || product.stock < quantity) {
-          throw new Error(`${product.name} is out of stock or has insufficient stock.`);
+          throw new Error(
+            `${product.name} is out of stock or has insufficient stock.`
+          );
         }
 
         if (
@@ -156,8 +158,79 @@ const getMyOrders = async (req, res) => {
     });
   } catch (error) {
     console.error("Get my orders error:", error);
+
     return res.status(500).json({
       message: "Failed to fetch your orders.",
+    });
+  }
+};
+
+// Admin - Get all orders
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "fullName email")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      orders,
+    });
+  } catch (error) {
+    console.error("Get all orders error:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch orders.",
+    });
+  }
+};
+
+// Admin - Update order status
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    const allowedStatuses = [
+      "Pending",
+      "Confirmed",
+      "Processing",
+      "Shipped",
+      "Delivered",
+      "Cancelled",
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status.",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid order ID.",
+      });
+    }
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found.",
+      });
+    }
+
+    order.status = status;
+    await order.save();
+
+    return res.status(200).json({
+      message: "Order status updated successfully.",
+      order,
+    });
+  } catch (error) {
+    console.error("Update order status error:", error);
+
+    return res.status(500).json({
+      message: "Failed to update order status.",
     });
   }
 };
@@ -165,4 +238,6 @@ const getMyOrders = async (req, res) => {
 module.exports = {
   createOrder,
   getMyOrders,
+  getAllOrders,
+  updateOrderStatus,
 };
