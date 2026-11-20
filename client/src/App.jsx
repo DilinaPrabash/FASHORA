@@ -8,6 +8,7 @@ import CategorySection from "./components/CategorySection";
 import FeaturedProducts from "./components/FeaturedProducts";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import AdminProducts from "./pages/AdminProducts";
 
 import Home from "./pages/Home";
 import Products from "./pages/Products";
@@ -54,10 +55,11 @@ export default function App() {
             <Route path="/my-orders" element={<MyOrders />} />
           </Route>
 
-          {/* Admin Protected Routes */}
+        {/* Admin Protected Routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<AdminProducts />} />
             </Route>
           </Route>
         </Routes>
