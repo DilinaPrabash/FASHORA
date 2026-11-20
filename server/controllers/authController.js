@@ -3,7 +3,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// ===============================
 // Register User
+// ===============================
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -12,6 +14,24 @@ const registerUser = async (req, res) => {
     if (!fullName || !email || !password) {
       return res.status(400).json({
         message: "All fields are required",
+      });
+    }
+
+    // Validate full name
+    if (!fullName.trim()) {
+      return res.status(400).json({
+        message: "Full name is required",
+      });
+    }
+
+    // Validate email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        message: "Please enter a valid email address",
       });
     }
 
@@ -24,7 +44,7 @@ const registerUser = async (req, res) => {
 
     // Check existing user
     const existingUser = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
     });
 
     if (existingUser) {
@@ -37,10 +57,12 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
+    // Public registration always creates a customer
     const newUser = await User.create({
       fullName: fullName.trim(),
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       password: hashedPassword,
+      role: "customer",
     });
 
     return res.status(201).json({
@@ -52,8 +74,16 @@ const registerUser = async (req, res) => {
         role: newUser.role,
       },
     });
+
   } catch (error) {
     console.error("Registration error:", error.message);
+
+    // Handle duplicate email errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Email already registered",
+      });
+    }
 
     return res.status(500).json({
       message: "Server error during registration",
@@ -61,7 +91,9 @@ const registerUser = async (req, res) => {
   }
 };
 
+// ===============================
 // Login User
+// ===============================
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -96,10 +128,15 @@ const loginUser = async (req, res) => {
       });
     }
 
+    // Check JWT secret
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not configured");
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       {
-        id: user._id,
+        id: user._id.toString(),
         role: user.role,
       },
       process.env.JWT_SECRET,
